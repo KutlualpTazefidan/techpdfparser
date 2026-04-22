@@ -1,0 +1,25 @@
+-c constraints-common.txt
+
+# GPU pipeline dependencies — install on top of requirements.txt
+# Pin versions for reproducibility once tested on your hardware.
+
+# Page rendering
+pymupdf>=1.24
+
+# Visual pipeline
+colpali-engine          # ColQwen2.5 / ColPali
+
+# Text pipeline
+transformers>=4.44.2,<5 # olmOCR-2, Qwen2.5-VL, FlagEmbedding compatibility
+FlagEmbedding>=1.2      # BGE-M3
+
+# Structured pipeline
+mineru[pipeline]        # MinerU parser plus pipeline-only extras (ftfy, albumentations, etc.)
+paddlepaddle-gpu        # PP-FormulaNet (PaddleOCR backend)
+paddleocr>=2.7
+
+# Vector DB
+qdrant-client>=1.9
+
+# Deep learning runtime (install separately with CUDA wheel)
+# torch>=2.0+cu121     # from https://pytorch.org/get-started/locally/

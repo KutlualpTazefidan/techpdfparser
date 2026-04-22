@@ -1,0 +1,15 @@
+# Tested dependency constraints for the local-first ingest stack.
+#
+# Keep this file focused on packages that have broken imports or wire
+# compatibility in the past. Install requirements with `-c constraints-common.txt`
+# so transitive upgrades do not silently change runtime behavior.
+
+# pdfplumber / pdfminer / cryptography stack
+cryptography==46.0.7
+pdfminer.six==20251230
+pdfplumber==0.11.9
+
+# qdrant-client / httpx stack
+httpcore==1.0.9
+httpx==0.28.1
+qdrant-client==1.17.1

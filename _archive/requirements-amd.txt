@@ -1,0 +1,20 @@
+-c constraints-common.txt
+
+# AMD GPU / CPU-fallback pipeline stack
+# Install on top of requirements.txt
+#
+# torch CPU wheel (do NOT use the default PyPI variant — it ships with CUDA):
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#
+# Full install:
+#   pip install -r requirements.txt
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements-amd.txt
+
+pymupdf>=1.24
+transformers>=4.44.2,<5
+sentence-transformers>=2.7
+pdfplumber>=0.11
+pix2tex>=0.1.2
+einops>=0.7
+qdrant-client>=1.9
