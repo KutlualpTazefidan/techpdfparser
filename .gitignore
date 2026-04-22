@@ -72,6 +72,7 @@ config.yaml
 
 # Test PDFs
 *.pdf
+!extraction/tests/fixtures/*.pdf
 
 .claude/
 
