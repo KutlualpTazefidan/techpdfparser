@@ -9,4 +9,5 @@ from __future__ import annotations
 from . import (
     noop,  # noqa: F401
     pymupdf_renderer,  # noqa: F401
+    pymupdf_text_segmenter,  # noqa: F401
 )
