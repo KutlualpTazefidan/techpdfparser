@@ -196,3 +196,36 @@ def test_mineru25_segment_caches_per_pdf(sample_text_pdf: Path) -> None:
     r1 = adapter.segment(sample_text_pdf)
     r2 = adapter.segment(sample_text_pdf)
     assert len(r1) == len(r2)
+
+
+def test_mineru25_extract_returns_empty_content_stub() -> None:
+    # extract() is normally bypassed by tool_match. The stub returns
+    # ElementContent so the Protocol is satisfied.
+    from PIL import Image as PILImage
+
+    adapter = get_table_extractor("mineru25")
+    blank = PILImage.new("RGB", (10, 10))
+    content = adapter.extract(blank, page_number=0)
+    assert content is not None
+
+
+@pytest.mark.integration
+def test_mineru25_unload_resets_loaded_flag(sample_text_pdf: Path) -> None:
+    adapter = get_segmenter("mineru25")
+    assert adapter._loaded is False
+    regions = adapter.segment(sample_text_pdf)
+    assert len(regions) > 0
+    assert adapter._loaded is True
+    adapter.unload()  # type: ignore[unreachable]
+    assert adapter._loaded is False
+    # After unload, the pdf cache is cleared — calling segment again
+    # requires fresh inference.
+    assert adapter._pdf_cache == {}
+
+
+@pytest.mark.integration
+def test_mineru25_unload_without_load_is_safe() -> None:
+    # Calling unload() before any segment() must not raise.
+    adapter = get_segmenter("mineru25")
+    adapter.unload()
+    assert adapter._loaded is False

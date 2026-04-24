@@ -218,11 +218,46 @@ class MinerU25:
         return content_list, page_sizes_pts
 
     def extract(self, region_image: Image, page_number: int) -> ElementContent:
-        # Implemented in Task 5. Normally bypassed by the pipeline's
-        # tool_match optimization when segmenter and table_extractor
-        # share tool_name.
-        raise NotImplementedError("MinerU25.extract implemented in Task 5")
+        # Normally bypassed by the pipeline's tool_match when segmenter and
+        # table_extractor share tool_name. Return empty content so the
+        # Protocol is satisfied if tool_match ever does not apply.
+        return ElementContent()
 
     def unload(self) -> None:
-        # Implemented in Task 5.
-        raise NotImplementedError("MinerU25.unload implemented in Task 5")
+        """Release MinerU's held VRAM and drop all model references.
+
+        Called by `extraction._runtime.release_runtime_resources` between
+        pipeline roles. Safe to call multiple times and before any load.
+        """
+        # Clear pipeline backend's ModelSingleton (if the module was ever imported).
+        try:
+            from mineru.backend.pipeline.pipeline_analyze import (
+                ModelSingleton as _PipelineSingleton,
+            )
+
+            _PipelineSingleton()._models.clear()
+        except ImportError:
+            pass
+
+        # Shut down VLM backend if it was used (not by default, but defensive).
+        try:
+            from mineru.backend.vlm.vlm_analyze import shutdown_cached_models
+
+            shutdown_cached_models()
+        except ImportError:
+            pass
+
+        import gc
+
+        gc.collect()
+
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except ImportError:
+            pass
+
+        self._pdf_cache.clear()
+        self._loaded = False
