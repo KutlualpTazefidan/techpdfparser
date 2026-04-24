@@ -23,9 +23,9 @@ dev = [
     "uv",
 ]
 gpu = [
-    "mineru>=2.5",
-    "transformers>=4.40",
-    "torch>=2.2",
+    "mineru>=3.1",
+    "transformers>=4.49",
+    "torch>=2.4",
     "beautifulsoup4>=4.12",
 ]
 
