@@ -1,0 +1,12 @@
+# Stage-1 CPU-only config. No GPU adapters required.
+# Reuses the segmenter for text extraction via tool_match; other roles are noop.
+extraction:
+  renderer: pymupdf
+  segmenter: pymupdf_text
+  text_extractor: pymupdf_text   # tool_match: pipeline reuses segmenter content
+  table_extractor: noop
+  formula_extractor: noop
+  figure_descriptor: noop
+  output_dir: outputs
+  confidence_threshold: 0.3
+  dpi: 150

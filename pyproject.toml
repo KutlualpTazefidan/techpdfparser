@@ -20,6 +20,7 @@ dev = [
     "pytest-cov",
     "ruff",
     "mypy",
+    "uv",
 ]
 gpu = [
     "mineru>=2.5",
@@ -30,7 +31,15 @@ gpu = [
 
 [tool.setuptools.packages.find]
 include = ["extraction*"]
-exclude = ["outputs*", "_archive*", "embedding*", "indexing*", "tests*", "tasks*"]
+exclude = [
+    "outputs*",
+    "_archive*",
+    "embedding*",
+    "indexing*",
+    "extraction.tests*",
+    "tests*",
+    "tasks*",
+]
 
 [tool.ruff]
 line-length = 88
@@ -57,7 +66,7 @@ module = ["yaml"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["mineru.*", "transformers.*", "torch.*", "bs4.*", "fitz.*"]
+module = ["mineru.*", "transformers.*", "torch.*", "bs4.*", "fitz.*", "pymupdf.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
