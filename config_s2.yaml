@@ -1,0 +1,22 @@
+# Stage-2 config. Uses MinerU 2.5+ (via the mineru Python package) for
+# layout segmentation and table extraction on GPU. Text extraction still
+# falls through to pymupdf_text for now (Stage 3 introduces olmocr2).
+# Requires the [gpu] extras installed and ~15 GB model weights cached.
+extraction:
+  renderer: pymupdf
+  segmenter: mineru25
+  text_extractor: pymupdf_text
+  table_extractor: mineru25     # tool_match with segmenter: reuses segment() output for tables
+  formula_extractor: noop
+  figure_descriptor: noop
+  output_dir: outputs
+  confidence_threshold: 0.3
+  dpi: 150
+
+adapters:
+  mineru25:
+    backend: pipeline           # "pipeline" (ONNX + light PyTorch, ~1-2 GB VRAM)
+    parse_method: auto          # "auto" | "txt" | "ocr"
+    lang: en
+    formula_enable: true
+    table_enable: true
