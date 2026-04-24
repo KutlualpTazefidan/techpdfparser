@@ -131,14 +131,91 @@ class MinerU25:
     def __init__(self, **adapter_config: Any) -> None:
         self._config = adapter_config
         self._loaded: bool = False  # observable flag for lifecycle tests
+        self._pdf_cache: dict[str, list[Region]] = {}
 
     @property
     def tool_name(self) -> str:
         return self.TOOL_NAME
 
+    def _ensure_loaded(self) -> None:
+        # MinerU's ModelSingleton loads lazily on the first do_parse call.
+        # We set our own flag so lifecycle tests can observe state transitions.
+        self._loaded = True
+
     def segment(self, pdf_path: Path) -> list[Region]:
-        # Implemented in Task 4.
-        raise NotImplementedError("MinerU25.segment implemented in Task 4")
+        self._ensure_loaded()
+        resolved = pdf_path.resolve()
+        key = str(resolved)
+        if key in self._pdf_cache:
+            return self._pdf_cache[key]
+
+        content_list, page_sizes_pts = self._run_do_parse_and_read(resolved)
+        regions = _to_regions(content_list, page_sizes_pts)
+        self._pdf_cache[key] = regions
+        return regions
+
+    def _run_do_parse_and_read(
+        self, pdf_path: Path
+    ) -> tuple[list[dict[str, Any]], list[tuple[float, float]]]:
+        """Invoke mineru's do_parse into a scratch dir; read content_list + page sizes.
+
+        Heavy imports (mineru, pymupdf) are deferred to this method so the
+        module stays importable on CPU-only installs.
+        """
+        import json
+        import tempfile
+
+        import pymupdf  # for page sizes
+        from mineru.cli.common import do_parse
+
+        pdf_bytes = pdf_path.read_bytes()
+        stem = pdf_path.stem
+
+        with tempfile.TemporaryDirectory(prefix="mineru25_") as tmp:
+            tmp_dir = Path(tmp)
+            do_parse(
+                output_dir=str(tmp_dir),
+                pdf_file_names=[stem],
+                pdf_bytes_list=[pdf_bytes],
+                p_lang_list=[self._config.get("lang", "en")],
+                backend=self._config.get("backend", "pipeline"),
+                parse_method=self._config.get("parse_method", "auto"),
+                formula_enable=bool(self._config.get("formula_enable", True)),
+                table_enable=bool(self._config.get("table_enable", True)),
+                f_draw_layout_bbox=False,
+                f_draw_span_bbox=False,
+                f_dump_md=False,
+                f_dump_middle_json=False,
+                f_dump_model_output=False,
+                f_dump_orig_pdf=False,
+                f_dump_content_list=True,
+            )
+
+            # MinerU writes content_list under <tmp>/<stem>/<parse_method>/<stem>_content_list.json
+            parse_method_dir = self._config.get("parse_method", "auto")
+            content_list_candidates = list(
+                (tmp_dir / stem / parse_method_dir).glob("*_content_list.json")
+            )
+            if not content_list_candidates:
+                raise RuntimeError(
+                    f"mineru25: do_parse produced no content_list.json under "
+                    f"{tmp_dir / stem / parse_method_dir} (directory listing: "
+                    f"{list((tmp_dir / stem).rglob('*'))[:20]})"
+                )
+            content_list_path = content_list_candidates[0]
+            content_list = json.loads(content_list_path.read_text(encoding="utf-8"))
+
+        # Open the PDF with PyMuPDF to read page sizes in points.
+        doc = pymupdf.open(str(pdf_path))
+        try:
+            page_sizes_pts = [
+                (float(doc[i].rect.width), float(doc[i].rect.height))
+                for i in range(doc.page_count)
+            ]
+        finally:
+            doc.close()
+
+        return content_list, page_sizes_pts
 
     def extract(self, region_image: Image, page_number: int) -> ElementContent:
         # Implemented in Task 5. Normally bypassed by the pipeline's

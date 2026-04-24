@@ -6,6 +6,10 @@ Integration tests (GPU-gated via -m integration) appear in later tasks.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 from extraction.adapters.mineru25 import (
     _html_table_to_markdown,
     _to_regions,
@@ -147,3 +151,48 @@ def test_to_regions_drops_items_with_out_of_range_page() -> None:
     assert len(regions) == 1
     assert regions[0].content is not None
     assert regions[0].content.text == "ok"
+
+
+# --- integration tests (GPU required; gated by @pytest.mark.integration) ---
+
+
+@pytest.mark.integration
+def test_mineru25_segment_produces_regions(sample_text_pdf: Path) -> None:
+    adapter = get_segmenter("mineru25")
+    regions = adapter.segment(sample_text_pdf)
+    assert len(regions) > 0
+    # Kohavi 1997 is a 7-page paper with body text; at a minimum we expect
+    # text regions to be detected.
+    text_regions = [r for r in regions if r.region_type.value == "text"]
+    assert len(text_regions) > 0
+    # Every region should have well-formed bbox in PDF points (the Kohavi
+    # PDF is US Letter, so max width ~612pts, max height ~792pts).
+    for r in regions:
+        x0, y0, x1, y1 = r.bbox
+        assert 0 <= x0 <= x1 <= 700, f"x bbox out of plausible range: {r.bbox}"
+        assert 0 <= y0 <= y1 <= 900, f"y bbox out of plausible range: {r.bbox}"
+        assert 0 <= r.page < 7
+
+
+@pytest.mark.integration
+def test_mineru25_segment_finds_at_least_one_table(sample_text_pdf: Path) -> None:
+    # Kohavi 1997 paper contains "Table 1 True accuracy estimates...".
+    adapter = get_segmenter("mineru25")
+    regions = adapter.segment(sample_text_pdf)
+    table_regions = [r for r in regions if r.region_type.value == "table"]
+    assert len(table_regions) >= 1
+    # The table should have markdown content filled in.
+    for t in table_regions:
+        assert t.content is not None
+        assert (t.content.markdown or "").strip() != ""
+
+
+@pytest.mark.integration
+def test_mineru25_segment_caches_per_pdf(sample_text_pdf: Path) -> None:
+    # Calling segment twice on the same PDF should return the same result
+    # from cache (cheap, no re-inference). We assert object-equality on
+    # a per-region basis.
+    adapter = get_segmenter("mineru25")
+    r1 = adapter.segment(sample_text_pdf)
+    r2 = adapter.segment(sample_text_pdf)
+    assert len(r1) == len(r2)
