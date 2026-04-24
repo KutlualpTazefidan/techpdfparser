@@ -12,6 +12,7 @@ dependencies = [
     "pyyaml>=6.0",
     "pillow>=10.0",
     "pymupdf>=1.23",
+    "beautifulsoup4>=4.12",
 ]
 
 [project.optional-dependencies]
@@ -23,10 +24,9 @@ dev = [
     "uv",
 ]
 gpu = [
-    "mineru>=2.5",
-    "transformers>=4.40",
-    "torch>=2.2",
-    "beautifulsoup4>=4.12",
+    "mineru>=3.1",
+    "transformers>=4.49",
+    "torch>=2.4",
 ]
 
 [tool.setuptools.packages.find]
