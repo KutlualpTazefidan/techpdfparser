@@ -42,7 +42,7 @@ class PyMuPDFRenderer:
     def render_all(self, pdf_path: Path) -> list[Image]:
         doc = pymupdf.open(str(pdf_path))
         try:
-            return [self._render(page) for page in doc]
+            return [self._render(doc[i]) for i in range(doc.page_count)]
         finally:
             doc.close()
 

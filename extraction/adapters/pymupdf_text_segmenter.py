@@ -38,7 +38,8 @@ class PyMuPDFTextSegmenter:
         regions: list[Region] = []
         doc = pymupdf.open(str(pdf_path))
         try:
-            for page_number, page in enumerate(doc):
+            for page_number in range(doc.page_count):
+                page = doc[page_number]
                 for block in page.get_text("blocks"):
                     # block: (x0, y0, x1, y1, text, block_no, block_type)
                     if len(block) < 7:
